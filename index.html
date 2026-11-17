@@ -1,0 +1,221 @@
+<!doctype html>
+<html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>『こころ』意見レバー</title>
+<style>
+:root{--ink:#20252b;--muted:#666e78;--k:#3f6ea8;--s:#c4553b;--line:#e5e1da;--bg:#f4f2ee}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%}
+body{background:var(--bg);color:var(--ink);font-family:'Noto Sans JP','Hiragino Sans','Yu Gothic',sans-serif}
+.app{height:100vh;display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:18px;padding:18px}
+.panel{background:#fff;border:1px solid var(--line);border-radius:24px;box-shadow:0 14px 50px #2222220d}
+.lever{display:flex;flex-direction:column;justify-content:center;text-align:center;padding:clamp(18px,3vw,36px);min-height:0}
+.eyebrow{font-size:13px;letter-spacing:.14em;color:var(--muted);margin:0 0 8px}
+.ask{font-size:15px;color:var(--muted);margin:0 0 4px}
+h1{font-size:clamp(17px,2.2vw,24px);line-height:1.6;margin:0;min-height:3.2em;display:flex;align-items:center;justify-content:center;transition:color .3s}
+h1.pop{animation:pop .35s ease}
+@keyframes pop{0%{transform:scale(.94);opacity:.4}60%{transform:scale(1.04)}100%{transform:scale(1);opacity:1}}
+.dial{position:relative;width:min(520px,100%);margin:4px auto 0}
+svg{display:block;width:100%;height:auto;touch-action:none;user-select:none;-webkit-user-select:none}
+#hit{cursor:grab}
+svg.dragging #hit{cursor:grabbing}
+#knob{transition:r .15s}
+svg.dragging #knob{r:27}
+#slider:focus{outline:none}
+#slider:focus-visible #focusRing{opacity:1}
+#focusRing{opacity:0}
+.anim #needleG{transition:transform .6s cubic-bezier(.3,1.5,.5,1)}
+.readings{display:flex;justify-content:space-between;align-items:flex-end;margin-top:-4px;gap:12px}
+.reading{flex:1;text-align:left}.reading.s{text-align:right}
+.name{font-size:13px;font-weight:700}
+.k{color:var(--k)}.s{color:var(--s)}
+.value{font-size:clamp(32px,5vw,52px);font-weight:800;font-variant-numeric:tabular-nums;letter-spacing:-.03em;line-height:1.2}
+.value small{font-size:18px;margin-left:3px}
+.lever-tools{margin-top:16px;display:flex;justify-content:center}
+button{font:inherit;font-size:13px;border:1px solid #d9d5ce;background:#faf9f6;padding:9px 16px;border-radius:999px;color:var(--ink);cursor:pointer;white-space:nowrap}
+button:hover{background:#eeeae4}button:focus-visible{outline:3px solid #316da1;outline-offset:3px}
+button.primary{background:var(--ink);color:#fff;border-color:var(--ink)}
+button.primary:hover{background:#3a414a}
+/* memo */
+.memo{display:flex;flex-direction:column;min-height:0;overflow:hidden}
+.memo-head{display:flex;align-items:center;gap:10px;padding:16px 18px;border-bottom:1px solid #eee9e2;flex-wrap:wrap}
+.memo-head h2{font-size:17px;margin:0;margin-right:auto}
+.who{font:inherit;font-size:14px;border:1px solid #ddd8d0;border-radius:999px;padding:7px 14px;width:11em}
+.who:focus,textarea:focus{outline:3px solid #316da133;border-color:#316da1}
+.stages{overflow-y:auto;padding:14px 18px 18px;flex:1}
+.stage{border:1px solid var(--line);border-radius:16px;padding:12px 14px 14px;margin-bottom:12px;background:#fcfbf9}
+.stage.on{border-color:#b9c3cf;background:#fff}
+.stage-top{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+.num{flex:none;width:26px;height:26px;border-radius:50%;background:var(--ink);color:#fff;font-size:13px;font-weight:700;display:grid;place-items:center}
+.stage-title{font-weight:700;font-size:14.5px;flex:1}
+.stamp{font-size:12px;padding:6px 12px}
+textarea{width:100%;min-height:110px;resize:vertical;font:inherit;font-size:14.5px;line-height:1.7;border:1px solid #ddd8d0;border-radius:10px;padding:9px 11px;color:var(--ink);background:#fff}
+.print-only{display:none}
+.dlg{position:fixed;inset:0;background:#20252b80;display:grid;place-items:center;z-index:10;padding:16px}
+.dlg[hidden]{display:none}
+.dlg-box{background:#fff;border-radius:18px;padding:22px 24px;width:min(420px,100%);font-size:15px;line-height:1.8;box-shadow:0 20px 60px #0003}
+.dlg-box ul{margin:8px 0 0;padding-left:1.3em;font-size:14px;color:var(--s)}
+.dlg-box small{color:var(--muted)}
+.dlg-btns{display:flex;justify-content:flex-end;gap:8px;margin-top:16px;flex-wrap:wrap}
+@media(max-width:760px){
+ .app{height:auto;min-height:100vh;display:block;padding:10px}
+ .lever{position:sticky;top:0;z-index:2;padding:10px 14px 12px;border-radius:0 0 20px 20px;margin:-10px -10px 12px}
+ .eyebrow,.ask{display:none}
+ h1{font-size:15px;min-height:2.6em}
+ .dial{width:min(300px,78%)}
+ .value{font-size:26px}.value small{font-size:14px}
+ .lever-tools{margin-top:6px}
+ .memo{overflow:visible}.stages{overflow:visible}
+}
+@media print{
+ @page{size:A4;margin:15mm 16mm}
+ html,body{height:auto;background:#fff}
+ .app,.dlg{display:none!important}
+ #pr{display:block!important;font-size:12.5px;color:var(--ink)}
+ #pr .ph{display:flex;justify-content:space-between;align-items:flex-end;border-bottom:1.5px solid var(--ink);padding-bottom:5px;margin-bottom:10px}
+ #pr .ph b{font-size:16px}
+ #pr .ph span{font-size:12px;color:var(--muted)}
+ #pr .sum{display:grid;grid-template-columns:62mm 1fr;gap:6mm;align-items:center;border:1px solid #cfcac2;border-radius:3mm;padding:4mm 5mm;break-inside:avoid;margin-bottom:6mm}
+ #pr .sum svg{width:100%;height:auto}
+ #pr .q{font-size:11px;color:var(--muted);margin:0 0 2px}
+ #pr .st{font-size:14px;font-weight:700;margin:0 0 6px;line-height:1.5}
+ #pr .pc{display:flex;gap:8mm}
+ #pr .pc div{font-size:11px;font-weight:700}
+ #pr .pc b{display:block;font-size:26px;line-height:1.1}
+ #pr .sec{margin-bottom:4mm;border:1px solid #cfcac2;border-radius:2mm;min-height:62mm;padding-bottom:3mm;-webkit-box-decoration-break:clone;box-decoration-break:clone}
+ #pr .sec h3{font-size:13px;margin:0 0 2.5mm;padding:1.8mm 4mm;background:#efece7;border-radius:2mm 2mm 0 0;break-after:avoid}
+ #pr .sec p{white-space:pre-wrap;word-break:break-word;line-height:1.75;margin:0;padding:0 4mm;orphans:3;widows:3}
+ #pr .sec p.none{color:var(--muted)}
+}
+</style></head><body>
+<div id="pr" class="print-only"></div>
+<div class="app">
+<section class="panel lever">
+<p class="eyebrow">『こころ』模擬法廷 ／ 裁判官の意見</p>
+<p class="ask">Kの死の原因を、どちらに見るか。</p>
+<h1 id="stance">ハンドルをつかんで、今の考えの位置まで動かそう。</h1>
+<div class="dial">
+<svg id="svg" viewBox="0 0 440 262" aria-hidden="false">
+<defs>
+<linearGradient id="arcGrad" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#3f6ea8"/><stop offset=".45" stop-color="#cfd6df"/><stop offset=".55" stop-color="#e9d8d1"/><stop offset="1" stop-color="#c4553b"/></linearGradient>
+<filter id="shadow" x="-50%" y="-50%" width="200%" height="200%"><feDropShadow dx="0" dy="3" stdDeviation="3" flood-opacity=".28"/></filter>
+</defs>
+<path d="M 40 220 A 180 180 0 0 1 400 220" fill="none" stroke="#ece8e2" stroke-width="46" stroke-linecap="round"/>
+<path d="M 40 220 A 180 180 0 0 1 400 220" fill="none" stroke="url(#arcGrad)" stroke-width="30" stroke-linecap="round"/>
+<g id="ticks"></g>
+<text x="40" y="256" text-anchor="middle" font-size="14" font-weight="700" fill="#3f6ea8">K自身</text>
+<text x="400" y="256" text-anchor="middle" font-size="14" font-weight="700" fill="#c4553b">先生の行為</text>
+<g id="slider" role="slider" tabindex="0" aria-label="Kの死の原因を、K自身と先生の行為のどちらに見るか" aria-valuemin="0" aria-valuemax="100" aria-valuenow="50">
+<g id="needleG" style="transform-origin:220px 220px">
+<line x1="220" y1="220" x2="220" y2="62" stroke="#2e343c" stroke-width="7" stroke-linecap="round"/>
+<circle id="focusRing" cx="220" cy="40" r="34" fill="none" stroke="#316da1" stroke-width="3"/>
+<circle id="knob" cx="220" cy="40" r="24" fill="#7b7f86" stroke="#fff" stroke-width="5" filter="url(#shadow)"/>
+<circle cx="220" cy="40" r="7" fill="#fff" opacity=".75"/>
+</g>
+</g>
+<circle cx="220" cy="220" r="20" fill="#2e343c" filter="url(#shadow)"/>
+<circle cx="220" cy="220" r="7" fill="#fff" opacity=".6"/>
+<rect id="hit" x="0" y="0" width="440" height="240" fill="transparent"/>
+</svg>
+</div>
+<div class="readings" aria-hidden="true"><div class="reading k"><div class="name">K自身の側</div><div class="value"><span id="kv">50</span><small>％</small></div></div><div class="reading s"><div class="name">先生の行為の側</div><div class="value"><span id="sv">50</span><small>％</small></div></div></div>
+<div class="lever-tools"><button id="reset" type="button">スタートに戻す</button></div>
+</section>
+
+<section class="panel memo" aria-labelledby="memoTitle">
+<div class="memo-head"><h2 id="memoTitle">裁判官メモ</h2><input class="who" id="who" type="text" placeholder="名前" aria-label="名前"><button id="pdf" type="button" class="primary">PDFで書き出す</button></div>
+<div class="stages" id="stages"></div>
+</section>
+</div>
+<div class="dlg" id="dlg" hidden><div class="dlg-box" role="alertdialog" aria-modal="true" aria-labelledby="dlgMsg"><div id="dlgMsg"></div><div class="dlg-btns"><button type="button" id="dlgNo"></button><button type="button" id="dlgOk" class="primary"></button></div></div></div>
+<script>
+'use strict';
+const CX=220,CY=220,R=180;
+const svg=document.getElementById('svg'),slider=document.getElementById('slider'),needle=document.getElementById('needleG'),knob=document.getElementById('knob'),stanceEl=document.getElementById('stance'),kv=document.getElementById('kv'),sv=document.getElementById('sv');
+const ticks=document.getElementById('ticks');
+for(let i=0;i<=10;i++){const a=Math.PI*(1-i/10),big=i%5===0,r1=R+(big?26:23),r2=R+(big?40:32);const l=document.createElementNS('http://www.w3.org/2000/svg','line');l.setAttribute('x1',CX+r1*Math.cos(a));l.setAttribute('y1',CY-r1*Math.sin(a));l.setAttribute('x2',CX+r2*Math.cos(a));l.setAttribute('y2',CY-r2*Math.sin(a));l.setAttribute('stroke',big?'#9aa1aa':'#cfd3d8');l.setAttribute('stroke-width',big?3:2);l.setAttribute('stroke-linecap','round');ticks.appendChild(l);}
+function stance(n){if(n<=20)return 'Kの死の原因は、主にK自身の側にあると考える。';if(n<50)return '先生の行為よりも、K自身の側に原因があると考える。';if(n===50)return 'K自身と先生の行為、どちらに原因があるか決めきれない。';if(n<80)return 'K自身の側よりも、先生の行為に原因があると考える。';return 'Kの死の原因は、主に先生の行為にあると考える。';}
+function mix(a,b,t){const p=x=>[1,3,5].map(i=>parseInt(x.substr(i,2),16));const A=p(a),B=p(b);return 'rgb('+A.map((v,i)=>Math.round(v+(B[i]-v)*t)).join(',')+')';}
+let value=50,touched=false,lastBand='';
+function band(n){return n<=20?'a':n<50?'b':n===50?'c':n<80?'d':'e';}
+var render=function(){needle.style.transform='rotate('+((value-50)*1.8)+'deg)';knob.setAttribute('fill',value<50?mix('#7b7f86','#3f6ea8',(50-value)/50):mix('#7b7f86','#c4553b',(value-50)/50));kv.textContent=100-value;sv.textContent=value;slider.setAttribute('aria-valuenow',value);slider.setAttribute('aria-valuetext','K自身の側'+(100-value)+'パーセント、先生の行為の側'+value+'パーセント。'+stance(value));if(touched){const b=band(value);stanceEl.textContent=stance(value);stanceEl.style.color=value<50?'#2f5687':value>50?'#a3422c':'#20252b';if(b!==lastBand){stanceEl.classList.remove('pop');void stanceEl.offsetWidth;stanceEl.classList.add('pop');lastBand=b;}}};
+function set(n,animate){let r=Math.max(0,Math.min(100,Math.round(n)));if(r===50){r=n<value?49:n>value?51:(n<50?49:51);}value=r;touched=true;svg.classList.toggle('anim',!!animate);render();}
+function fromPointer(e){const pt=svg.createSVGPoint();pt.x=e.clientX;pt.y=e.clientY;const p=pt.matrixTransform(svg.getScreenCTM().inverse());let a=Math.atan2(CY-p.y,p.x-CX);if(a<0)a=p.x<CX?Math.PI:0;return 100*(1-a/Math.PI);}
+let drag=false;
+svg.addEventListener('pointerdown',e=>{drag=true;svg.setPointerCapture(e.pointerId);svg.classList.add('dragging');set(fromPointer(e),true);slider.focus({preventScroll:true});setTimeout(()=>svg.classList.remove('anim'),0);});
+svg.addEventListener('pointermove',e=>{if(drag)set(fromPointer(e),false);});
+const end=()=>{drag=false;svg.classList.remove('dragging');};
+svg.addEventListener('pointerup',end);svg.addEventListener('pointercancel',end);
+slider.addEventListener('keydown',e=>{const step=e.shiftKey?10:1;let n=null;if(e.key==='ArrowRight'||e.key==='ArrowUp')n=value+step;else if(e.key==='ArrowLeft'||e.key==='ArrowDown')n=value-step;else if(e.key==='Home')n=0;else if(e.key==='End')n=100;if(n!==null){e.preventDefault();set(n,true);}});
+const initialStance=stanceEl.textContent,initialColor=stanceEl.style.color;document.getElementById('reset').addEventListener('click',()=>{value=50;touched=false;lastBand='';svg.classList.add('anim');stanceEl.textContent=initialStance;stanceEl.style.color=initialColor;render();});
+render();
+
+/* ---- 裁判官メモ ---- */
+const STAGES=['最初の主張','質問・応答','最後の主張'];
+const KEY='kokoro-lever-memo-v3';
+const store={get(){try{return JSON.parse(localStorage.getItem(KEY)||'{}')}catch(e){return {}}},set(o){try{localStorage.setItem(KEY,JSON.stringify(o))}catch(e){}}};
+const saved=store.get();
+const who=document.getElementById('who');who.value=saved.who||'';
+const wrap=document.getElementById('stages'),areas=[];
+STAGES.forEach((t,i)=>{
+ const box=document.createElement('div');box.className='stage';
+ box.innerHTML='<div class="stage-top"><span class="num">'+(i+1)+'</span><label class="stage-title" for="m'+i+'">'+t+'</label><button type="button" class="stamp">レバー位置を記録</button></div><textarea id="m'+i+'"></textarea>';
+ const ta=box.querySelector('textarea');ta.value=(saved.memos||[])[i]||'';areas.push(ta);
+ ta.addEventListener('input',save);
+ ta.addEventListener('focus',()=>{document.querySelectorAll('.stage.on').forEach(s=>s.classList.remove('on'));box.classList.add('on');});
+ box.querySelector('.stamp').addEventListener('click',()=>{
+  const tag='【K自身'+(100-value)+'％／先生の行為'+value+'％】';
+  const pos=ta.selectionStart??ta.value.length;
+  const before=ta.value.slice(0,pos),after=ta.value.slice(pos);
+  const ins=(before&&!before.endsWith('\n')?'\n':'')+tag+'\n';
+  ta.value=before+ins+after;ta.focus();const c=(before+ins).length;ta.setSelectionRange(c,c);save();
+ });
+ wrap.appendChild(box);
+});
+who.addEventListener('input',save);
+function save(){store.set({who:who.value,memos:areas.map(a=>a.value),lever:touched?value:null});}
+if(typeof saved.lever==='number'){value=saved.lever;touched=true;render();}
+const _render=render;render=function(){_render();save();};
+
+/* ---- PDF書き出し（印刷 → PDFとして保存） ---- */
+function esc(s){return s.replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));}
+function fillPrint(){
+ const d=new Date(),ds=d.getFullYear()+'年'+(d.getMonth()+1)+'月'+d.getDate()+'日';
+ const gh=svg.outerHTML.replace(/arcGrad/g,'pArcGrad').replace(/"shadow"/g,'"pShadow"').replace(/#shadow/g,'#pShadow').replace(/ id="(svg|ticks|slider|needleG|focusRing|knob|hit)"/g,'').replace(/<rect[^>]*><\/rect>|<rect[^>]*\/>/g,'');
+ const pr=document.getElementById('pr');
+ pr.innerHTML='<div class="ph"><b>『こころ』模擬法廷　裁判官メモ</b><span>'+ds+(who.value.trim()?'　名前：'+esc(who.value.trim()):'')+'</span></div>'
+  +'<div class="sum"><div class="g"></div><div><p class="q">Kの死の原因を、どちらに見るか。</p><p class="st">'+(touched?stance(value):'（レバーは動かしていません）')+'</p>'
+  +'<div class="pc"><div class="k">K自身の側<b>'+(100-value)+'％</b></div><div class="s">先生の行為の側<b>'+value+'％</b></div></div></div></div>'
+  +STAGES.map((t,i)=>{const v=areas[i].value.trim();return '<div class="sec"><h3>'+(i+1)+'　'+t+'</h3><p'+(v?'':' class="none"')+'>'+(v?esc(v):'（メモなし）')+'</p></div>';}).join('');
+ pr.querySelector('.g').innerHTML=gh;
+}
+window.addEventListener('beforeprint',fillPrint);
+function doPrint(){
+ fillPrint();
+ const old=document.title;document.title='こころ模擬法廷メモ'+(who.value?'_'+who.value:'');
+ window.print();
+ setTimeout(()=>document.title=old,1000);
+}
+/* 埋め込み表示（Notionやプレビュー）では印刷が止められることがあるため、新しいタブで開くよう案内する */
+const embedded=(()=>{try{return window.self!==window.top}catch(e){return true}})();
+const dlg=document.getElementById('dlg'),dlgMsg=document.getElementById('dlgMsg'),dlgOk=document.getElementById('dlgOk'),dlgNo=document.getElementById('dlgNo');
+let onOk=null;
+function ask(html,okLabel,noLabel,cb){dlgMsg.innerHTML=html;dlgOk.textContent=okLabel;dlgNo.textContent=noLabel;dlgNo.hidden=!noLabel;onOk=cb;dlg.hidden=false;dlgOk.focus();}
+function closeDlg(){dlg.hidden=true;onOk=null;}
+dlgOk.addEventListener('click',()=>{const f=onOk;closeDlg();if(f)f();});
+dlgNo.addEventListener('click',closeDlg);
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!dlg.hidden)closeDlg();});
+function startExport(){
+ if(embedded){
+  ask('この画面ではPDFを書き出せないことがあります。<br>新しいタブで開いてから、もう一度「PDFで書き出す」を押してください。<br><small>（書いたメモとレバーの位置は、新しいタブにも残っています）</small>','新しいタブで開く','閉じる',()=>{window.open(location.href,'_blank');});
+  return;
+ }
+ doPrint();
+}
+document.getElementById('pdf').addEventListener('click',()=>{
+ const empty=[];
+ if(!who.value.trim())empty.push('名前');
+ STAGES.forEach((t,i)=>{if(!areas[i].value.trim())empty.push((i+1)+'　'+t);});
+ if(empty.length){
+  ask('<b>まだ未入力の箇所がありますが、いいですか？</b><ul>'+empty.map(x=>'<li>'+esc(x)+'</li>').join('')+'</ul>','このまま書き出す','戻って入力する',startExport);
+ }else startExport();
+});
+</script></body></html>
